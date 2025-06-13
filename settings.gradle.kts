@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "HidBarcodeScannerSample"
 include(":app")
- 
+include(":lib-hbs")
