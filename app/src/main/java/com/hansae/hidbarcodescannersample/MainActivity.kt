@@ -1,5 +1,9 @@
 package com.hansae.hidbarcodescannersample
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -7,10 +11,35 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.hansae.hbs.BarcodeScanService
+import com.hansae.hbs.BarcodeScanService.Companion.ACTION_BARCODE_SCAN
 import com.hansae.hbs.HidManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
-    private var hidManager: HidManager? = null
+    private val barcodeScanBroadcast = object: BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            Log.e(">>>", "Received intent: ${intent?.action}")
+            when (intent?.action) {
+                ACTION_BARCODE_SCAN -> {
+                    val barcode = intent.getStringExtra("barcode")
+                    if (barcode != null) {
+                        // Handle the scanned barcode
+                        CoroutineScope(Dispatchers.Main).launch {
+                            Toast.makeText(this@MainActivity, barcode, Toast.LENGTH_LONG).show()
+                        }
+                    } else {
+                        Log.e(">>>", "No barcode received")
+                    }
+                }
+                else -> {
+                    Log.e(">>>", "Unknown action received: ${intent?.action}")
+                }
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,21 +51,13 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        hidManager = HidManager(this)
-        hidManager?.let {
-            it.getHidDevices().firstOrNull()?.let { device ->
-                Log.e(">>>", "has permission: ${it.hasPermission(device)}")
-                if (!it.hasPermission(device)) {
-                    it.requestPermission(device)
-                } else {
-                    it.connectToUsbDevice(device)
-                    it.setOnMessageListener(object: HidManager.MessageListener {
-                        override fun onMessageReceived(message: String) {
-                            Toast.makeText(this@MainActivity, "Received message: $message", Toast.LENGTH_LONG).show()
-                        }
-                    })
-                }
-            }
-        }
+        registerReceiver(barcodeScanBroadcast, IntentFilter(ACTION_BARCODE_SCAN))
+
+        startService(Intent(this, BarcodeScanService::class.java))
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(barcodeScanBroadcast)
     }
 }

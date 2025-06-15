@@ -125,6 +125,6 @@ class HidManager(private val context: Context) {
     }
 
     companion object {
-        private const val ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION"
+        const val ACTION_USB_PERMISSION = "com.kwon.hbs.USB_PERMISSION"
     }
 }
