@@ -29,8 +29,10 @@ class HidManager(private val context: Context) {
     fun requestPermission(device: UsbDevice) {
         val permissionIntent = PendingIntent.getBroadcast(
             context, 0,
-            Intent(ACTION_USB_PERMISSION),
-            PendingIntent.FLAG_IMMUTABLE
+            Intent(ACTION_USB_PERMISSION).apply {
+                setPackage(context.packageName)
+            },
+            PendingIntent.FLAG_MUTABLE
         )
         usbManager.requestPermission(device, permissionIntent)
     }

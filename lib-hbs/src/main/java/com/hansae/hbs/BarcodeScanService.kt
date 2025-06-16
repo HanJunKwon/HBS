@@ -1,6 +1,5 @@
 package com.hansae.hbs
 
-import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.content.IntentFilter
@@ -15,7 +14,6 @@ class BarcodeScanService: Service() {
 
     private val permissionBroadcast = object: android.content.BroadcastReceiver() {
         override fun onReceive(context: android.content.Context?, intent: Intent) {
-            Log.e(">>>", "Received intent: ${intent.action}")
             if (intent.action == ACTION_USB_PERMISSION) {
                 synchronized(this) {
                     val device: UsbDevice? = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
@@ -26,7 +24,7 @@ class BarcodeScanService: Service() {
                                 override fun onMessageReceived(message: String) {
                                     sendBroadcast(Intent().apply {
                                         action = ACTION_BARCODE_SCAN
-                                        putExtra("barcode", message)
+                                        putExtra(ACTION_KEY_BARCODE, message)
                                     })
                                 }
                             })
@@ -48,8 +46,6 @@ class BarcodeScanService: Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.e(">>>", "BarcodeScanService started")
-
         hidManager?.let {
             it.getHidDevices().firstOrNull()?.let { device ->
                 if (!it.hasPermission(device)) {
@@ -60,7 +56,7 @@ class BarcodeScanService: Service() {
                         override fun onMessageReceived(message: String) {
                             sendBroadcast(Intent().apply {
                                 action = ACTION_BARCODE_SCAN
-                                putExtra("barcode", message)
+                                putExtra(ACTION_KEY_BARCODE, message)
                             })
                         }
                     })
@@ -77,5 +73,7 @@ class BarcodeScanService: Service() {
 
     companion object {
         const val ACTION_BARCODE_SCAN = "com.kwon.hbs.BARCODE_SCAN"
+
+        const val ACTION_KEY_BARCODE = "barcode"
     }
 }
