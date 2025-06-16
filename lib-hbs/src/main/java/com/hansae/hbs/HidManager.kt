@@ -14,6 +14,8 @@ class HidManager(private val context: Context) {
     private var messageListener: MessageListener? = null
     private var hidDeviceConnectionListener: HidDeviceConnectionListener? = null
 
+    private var isMuteStartTime = 0L
+
     fun getHidDevices(): List<UsbDevice> {
         return usbManager.deviceList.values.filter { device ->
             device.deviceClass == UsbConstants.USB_CLASS_HID || device.deviceClass == UsbConstants.USB_CLASS_PER_INTERFACE
@@ -31,7 +33,6 @@ class HidManager(private val context: Context) {
             PendingIntent.FLAG_IMMUTABLE
         )
         usbManager.requestPermission(device, permissionIntent)
-        Log.e(">>>", "Requesting permission for device: ${device.deviceName}")
     }
 
     fun connectToUsbDevice(device: UsbDevice) {
@@ -51,14 +52,17 @@ class HidManager(private val context: Context) {
             return
         }
 
-        Log.d("USB", "Connection opened. Ready to receive data.")
-
         val buffer = ByteArray(endpoint.maxPacketSize)
         val stringBuilder = StringBuilder()
 
         Thread {
             while (true) {
                 val receivedBytes = connection.bulkTransfer(endpoint, buffer, buffer.size, 1000)
+
+                if (System.currentTimeMillis() - isMuteStartTime < DATE_RECEIVE_DELAY) {
+                    continue // Mute 상태가 유지되는 동안 데이터 수신을 건너뜀
+                }
+
                 if (receivedBytes > 0) {
                     val modifier = buffer[0]
                     val keyCode = buffer[2]
@@ -66,6 +70,7 @@ class HidManager(private val context: Context) {
                     val char = hidKeyCodeToChar(modifier, keyCode)
                     if (char != null) {
                         if (char == '\n') {
+                            isMuteStartTime = System.currentTimeMillis()
                             messageListener?.onMessageReceived(stringBuilder.toString())
                             stringBuilder.clear()
                         } else {
@@ -126,5 +131,7 @@ class HidManager(private val context: Context) {
 
     companion object {
         const val ACTION_USB_PERMISSION = "com.kwon.hbs.USB_PERMISSION"
+
+        private const val DATE_RECEIVE_DELAY = 100 // ms
     }
 }
