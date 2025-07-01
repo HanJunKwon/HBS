@@ -71,6 +71,11 @@ class BarcodeScanService: Service() {
         return null
     }
 
+    override fun onDestroy() {
+        unregisterReceiver(permissionBroadcast)
+        super.onDestroy()
+    }
+
     companion object {
         const val ACTION_BARCODE_SCAN = "com.kwon.hbs.BARCODE_SCAN"
 
