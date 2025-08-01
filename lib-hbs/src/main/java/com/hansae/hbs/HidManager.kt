@@ -7,6 +7,7 @@ import android.content.Intent
 import android.hardware.usb.UsbConstants
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
+import android.os.Build
 import android.util.Log
 
 class HidManager(private val context: Context) {
@@ -18,7 +19,10 @@ class HidManager(private val context: Context) {
 
     fun getHidDevices(): List<UsbDevice> {
         return usbManager.deviceList.values.filter { device ->
-            device.deviceClass == UsbConstants.USB_CLASS_HID || device.deviceClass == UsbConstants.USB_CLASS_PER_INTERFACE
+            (device.deviceClass == UsbConstants.USB_CLASS_HID) ||
+                    (device.deviceClass == UsbConstants.USB_CLASS_PER_INTERFACE && (0 until device.interfaceCount).any {
+                        device.getInterface(it).interfaceClass == UsbConstants.USB_CLASS_HID
+                    })
         }
     }
 
