@@ -18,7 +18,17 @@ class HidManager(private val context: Context) {
     private var isMuteStartTime = 0L
 
     fun getHidDevices(): List<UsbDevice> {
+        for (device in usbManager.deviceList.values) {
+            Log.d(">>>", "getHidDevices() :: " +
+                    "Device: ${device.deviceName}, " +
+                    "Class: ${device.deviceClass}, " +
+                    "Interfaces: ${device.interfaceCount}, " +
+                    "Manufacture: ${device.manufacturerName}, " +
+                    "Product: ${device.productName}")
+        }
+
         return usbManager.deviceList.values.filter { device ->
+            (device.deviceClass == UsbConstants.USB_CLASS_PER_INTERFACE && device.manufacturerName?.contains("Honeywell", ignoreCase = true) == true) ||
             (device.deviceClass == UsbConstants.USB_CLASS_HID) ||
                     (device.deviceClass == UsbConstants.USB_CLASS_PER_INTERFACE && (0 until device.interfaceCount).any {
                         device.getInterface(it).interfaceClass == UsbConstants.USB_CLASS_HID
@@ -42,21 +52,28 @@ class HidManager(private val context: Context) {
     }
 
     fun connectToUsbDevice(device: UsbDevice) {
+        if (device.interfaceCount == 0) {
+            Log.e(">>>", "No interfaces found on device ${device.deviceName}")
+            return
+        }
+
         val usbInterface = device.getInterface(0)
         val endpoint = (0 until usbInterface.endpointCount)
             .map { usbInterface.getEndpoint(it) }
             .firstOrNull { it.direction == UsbConstants.USB_DIR_IN }
 
         if (endpoint == null) {
-            Log.e("USB", "No IN endpoint found")
+            Log.e(">>>", "No IN endpoint found")
             return
         }
 
         val connection = usbManager.openDevice(device)
         if (connection == null || !connection.claimInterface(usbInterface, true)) {
-            Log.e("USB", "Cannot open connection or claim interface")
+            Log.e(">>>", "Cannot open connection or claim interface")
             return
         }
+
+        Log.d(">>>", "Connected to HID device: ${device.deviceName}")
 
         val buffer = ByteArray(endpoint.maxPacketSize)
         val stringBuilder = StringBuilder()
@@ -72,6 +89,8 @@ class HidManager(private val context: Context) {
                 if (receivedBytes > 0) {
                     val modifier = buffer[0]
                     val keyCode = buffer[2]
+
+                    Log.d(">>>", "Received data: modifier=$modifier, keyCode=$keyCode")
 
                     val char = hidKeyCodeToChar(modifier, keyCode)
                     if (char != null) {

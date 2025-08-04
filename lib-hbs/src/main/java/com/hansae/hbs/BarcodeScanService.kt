@@ -14,9 +14,11 @@ class BarcodeScanService: Service() {
 
     private val permissionBroadcast = object: android.content.BroadcastReceiver() {
         override fun onReceive(context: android.content.Context?, intent: Intent) {
+            Log.d(">>>", "Received intent: ${intent.action}")
             if (intent.action == ACTION_USB_PERMISSION) {
                 synchronized(this) {
                     val device: UsbDevice? = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
+                    Log.d(">>>", "granted permission: ${intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)}")
                     if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
                         device?.apply {
                             hidManager?.connectToUsbDevice(device)
@@ -40,14 +42,21 @@ class BarcodeScanService: Service() {
     override fun onCreate() {
         super.onCreate()
 
+        Log.d(">>>", "BarcodeScanService created")
+
         hidManager = HidManager(this)
 
         registerReceiver(permissionBroadcast, IntentFilter(ACTION_USB_PERMISSION))
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d(">>>", "BarcodeScanService onStartCommand")
+
+        Log.d(">>>", "HID Manager is null? ${hidManager == null}")
+
         hidManager?.let {
             it.getHidDevices().firstOrNull()?.let { device ->
+                Log.d(">>>", "Found HID device: ${device.deviceName}")
                 if (!it.hasPermission(device)) {
                     it.requestPermission(device)
                 } else {
