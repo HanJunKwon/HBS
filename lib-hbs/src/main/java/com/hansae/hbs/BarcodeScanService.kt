@@ -7,10 +7,12 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.IBinder
 import android.util.Log
+import com.hansae.hbs.BarcodeScanManager
 import com.hansae.hbs.HidManager.Companion.ACTION_USB_PERMISSION
 
 class BarcodeScanService: Service() {
     private var hidManager: HidManager? = null
+    private var barcodeSCanManager = BarcodeScanManager.getInstance()
 
     private val permissionBroadcast = object: android.content.BroadcastReceiver() {
         override fun onReceive(context: android.content.Context?, intent: Intent) {
@@ -42,9 +44,15 @@ class BarcodeScanService: Service() {
     override fun onCreate() {
         super.onCreate()
 
-        Log.d(">>>", "BarcodeScanService created")
-
-        hidManager = HidManager(this)
+        barcodeSCanManager.setOnMessageListener(object: HidManager.MessageListener {
+            override fun onMessageReceived(message: String) {
+                Log.d(">>>", "BarcodeScanService received message: $message")
+                sendBroadcast(Intent().apply {
+                    action = ACTION_BARCODE_SCAN
+                    putExtra(ACTION_KEY_BARCODE, message)
+                })
+            }
+        })
 
         registerReceiver(permissionBroadcast, IntentFilter(ACTION_USB_PERMISSION))
     }
@@ -54,24 +62,6 @@ class BarcodeScanService: Service() {
 
         Log.d(">>>", "HID Manager is null? ${hidManager == null}")
 
-        hidManager?.let {
-            it.getHidDevices().firstOrNull()?.let { device ->
-                Log.d(">>>", "Found HID device: ${device.deviceName}")
-                if (!it.hasPermission(device)) {
-                    it.requestPermission(device)
-                } else {
-                    it.connectToUsbDevice(device)
-                    it.setOnMessageListener(object: HidManager.MessageListener {
-                        override fun onMessageReceived(message: String) {
-                            sendBroadcast(Intent().apply {
-                                action = ACTION_BARCODE_SCAN
-                                putExtra(ACTION_KEY_BARCODE, message)
-                            })
-                        }
-                    })
-                }
-            }
-        }
 
         return super.onStartCommand(intent, flags, startId)
     }
