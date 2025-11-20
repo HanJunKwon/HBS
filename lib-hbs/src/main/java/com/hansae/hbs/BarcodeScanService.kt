@@ -54,7 +54,7 @@ class BarcodeScanService: Service() {
             }
         })
 
-        registerReceiver(permissionBroadcast, IntentFilter(ACTION_USB_PERMISSION))
+        registerReceiver(permissionBroadcast, IntentFilter(ACTION_USB_PERMISSION), RECEIVER_EXPORTED)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

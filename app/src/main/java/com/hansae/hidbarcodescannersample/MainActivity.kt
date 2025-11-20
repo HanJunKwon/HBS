@@ -55,7 +55,7 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        registerReceiver(barcodeScanBroadcast, IntentFilter(ACTION_BARCODE_SCAN))
+        registerReceiver(barcodeScanBroadcast, IntentFilter(ACTION_BARCODE_SCAN), RECEIVER_EXPORTED)
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
