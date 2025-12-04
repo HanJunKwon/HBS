@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import com.hansae.hbs.BarcodeScanManager
@@ -54,7 +55,11 @@ class BarcodeScanService: Service() {
             }
         })
 
-        registerReceiver(permissionBroadcast, IntentFilter(ACTION_USB_PERMISSION), RECEIVER_EXPORTED)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            registerReceiver(permissionBroadcast, IntentFilter(ACTION_USB_PERMISSION), RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(permissionBroadcast, IntentFilter(ACTION_USB_PERMISSION))
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
