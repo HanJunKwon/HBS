@@ -1,8 +1,6 @@
 package com.hansae.hbs
 
-import android.util.Log
 import android.view.KeyEvent
-import com.hansae.hbs.HidManager.MessageListener
 
 object BarcodeScanManager {
     private var barcodeBuffer = StringBuilder()
@@ -27,7 +25,6 @@ object BarcodeScanManager {
         val char = unicodeChar.toChar()
 
         if (char == '\n') {
-            Log.d(">>>", "BarcodeScanManager received barcode: ${barcodeBuffer.toString()}")
             messageListener?.onMessageReceived(barcodeBuffer.toString())
             barcodeBuffer.clear()
         } else {
@@ -40,4 +37,9 @@ object BarcodeScanManager {
     fun setOnMessageListener(listener: MessageListener) {
         this.messageListener = listener
     }
+
+    interface MessageListener {
+        fun onMessageReceived(message: String)
+    }
+
 }

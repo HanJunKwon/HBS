@@ -4,9 +4,11 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -15,17 +17,13 @@ import androidx.core.view.WindowInsetsCompat
 import com.hansae.hbs.BarcodeScanManager
 import com.hansae.hbs.BarcodeScanService
 import com.hansae.hbs.BarcodeScanService.Companion.ACTION_BARCODE_SCAN
-import com.hansae.hbs.HidManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.json.JSONException
-import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
     private val barcodeScanBroadcast = object: BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            Log.e(">>>", "Received intent: ${intent?.action}")
             when (intent?.action) {
                 ACTION_BARCODE_SCAN -> {
                     val barcode = intent.getStringExtra("barcode")
@@ -33,6 +31,8 @@ class MainActivity : AppCompatActivity() {
                         // Handle the scanned barcode
                         CoroutineScope(Dispatchers.Main).launch {
                             Toast.makeText(this@MainActivity, barcode, Toast.LENGTH_LONG).show()
+
+                            findViewById<TextView>(R.id.tv_barcode).text = barcode
                         }
                     } else {
                         Log.e(">>>", "No barcode received")
@@ -55,7 +55,11 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        registerReceiver(barcodeScanBroadcast, IntentFilter(ACTION_BARCODE_SCAN), RECEIVER_EXPORTED)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            registerReceiver(barcodeScanBroadcast, IntentFilter(ACTION_BARCODE_SCAN), RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(barcodeScanBroadcast, IntentFilter(ACTION_BARCODE_SCAN))
+        }
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {

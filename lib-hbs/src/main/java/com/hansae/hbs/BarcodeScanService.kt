@@ -2,82 +2,26 @@ package com.hansae.hbs
 
 import android.app.Service
 import android.content.Intent
-import android.content.IntentFilter
-import android.hardware.usb.UsbDevice
-import android.hardware.usb.UsbManager
-import android.os.Build
 import android.os.IBinder
-import android.util.Log
-import com.hansae.hbs.BarcodeScanManager
-import com.hansae.hbs.HidManager.Companion.ACTION_USB_PERMISSION
 
 class BarcodeScanService: Service() {
-    private var hidManager: HidManager? = null
-    private var barcodeSCanManager = BarcodeScanManager.getInstance()
-
-    private val permissionBroadcast = object: android.content.BroadcastReceiver() {
-        override fun onReceive(context: android.content.Context?, intent: Intent) {
-            Log.d(">>>", "Received intent: ${intent.action}")
-            if (intent.action == ACTION_USB_PERMISSION) {
-                synchronized(this) {
-                    val device: UsbDevice? = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
-                    Log.d(">>>", "granted permission: ${intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)}")
-                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                        device?.apply {
-                            hidManager?.connectToUsbDevice(device)
-                            hidManager?.setOnMessageListener(object: HidManager.MessageListener {
-                                override fun onMessageReceived(message: String) {
-                                    sendBroadcast(Intent().apply {
-                                        action = ACTION_BARCODE_SCAN
-                                        putExtra(ACTION_KEY_BARCODE, message)
-                                    })
-                                }
-                            })
-                        }
-                    } else {
-                        Log.e(">>>", "permission denied for device $device")
-                    }
-                }
-            }
-        }
-    }
+    private var barcodeScanManager = BarcodeScanManager.getInstance()
 
     override fun onCreate() {
         super.onCreate()
 
-        barcodeSCanManager.setOnMessageListener(object: HidManager.MessageListener {
+        barcodeScanManager.setOnMessageListener(object: BarcodeScanManager.MessageListener {
             override fun onMessageReceived(message: String) {
-                Log.d(">>>", "BarcodeScanService received message: $message")
                 sendBroadcast(Intent().apply {
                     action = ACTION_BARCODE_SCAN
                     putExtra(ACTION_KEY_BARCODE, message)
                 })
             }
         })
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            registerReceiver(permissionBroadcast, IntentFilter(ACTION_USB_PERMISSION), RECEIVER_EXPORTED)
-        } else {
-            registerReceiver(permissionBroadcast, IntentFilter(ACTION_USB_PERMISSION))
-        }
-    }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(">>>", "BarcodeScanService onStartCommand")
-
-        Log.d(">>>", "HID Manager is null? ${hidManager == null}")
-
-
-        return super.onStartCommand(intent, flags, startId)
     }
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
-    }
-
-    override fun onDestroy() {
-        unregisterReceiver(permissionBroadcast)
-        super.onDestroy()
     }
 
     companion object {
