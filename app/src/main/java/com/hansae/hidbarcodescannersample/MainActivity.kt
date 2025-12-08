@@ -17,6 +17,7 @@ import androidx.core.view.WindowInsetsCompat
 import com.hansae.hbs.BarcodeScanManager
 import com.hansae.hbs.BarcodeScanService
 import com.hansae.hbs.BarcodeScanService.Companion.ACTION_BARCODE_SCAN
+import com.hansae.hbs.BarcodeScanService.Companion.ACTION_KEY_BARCODE
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,7 +27,7 @@ class MainActivity : AppCompatActivity() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
                 ACTION_BARCODE_SCAN -> {
-                    val barcode = intent.getStringExtra("barcode")
+                    val barcode = intent.getStringExtra(ACTION_KEY_BARCODE)
                     if (barcode != null) {
                         // Handle the scanned barcode
                         CoroutineScope(Dispatchers.Main).launch {
@@ -64,6 +65,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         BarcodeScanManager.getInstance().eventKeyToBarcode(event)
+
         return true // 키 이벤트 소비
     }
 
