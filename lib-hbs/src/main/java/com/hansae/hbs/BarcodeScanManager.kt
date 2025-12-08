@@ -24,7 +24,7 @@ object BarcodeScanManager {
 
         val char = unicodeChar.toChar()
 
-        if (char == '\n' || event.action == KeyEvent.KEYCODE_ENTER) {
+        if (char == '\n' || char == '\r' || event.action == KeyEvent.KEYCODE_ENTER) {
             messageListener?.onMessageReceived(barcodeBuffer.toString())
             barcodeBuffer.clear()
         } else {
