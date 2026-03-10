@@ -17,21 +17,65 @@ object BarcodeScanManager {
     }
 
     fun eventKeyToBarcode(event: KeyEvent) {
-        if (event.action != KeyEvent.ACTION_UP) return
+        if (event.action != KeyEvent.ACTION_DOWN) return
 
-        val unicodeChar = event.unicodeChar
-        if (unicodeChar <= 0) return // 유효하지 않음. 여기서 return true 해야 EditText에 안 들어감
+        val keyCode = event.keyCode
 
-        val char = unicodeChar.toChar()
-
-        if (char == '\n' || char == '\r' || event.action == KeyEvent.KEYCODE_ENTER) {
-            messageListener?.onMessageReceived(barcodeBuffer.toString())
-            barcodeBuffer.clear()
-        } else {
-            barcodeBuffer.append(char)
+        // 엔터키 확인 (바코드의 끝)
+        if (keyCode == KeyEvent.KEYCODE_ENTER) {
+            val result = barcodeBuffer.toString()
+            if (result.isNotEmpty()) {
+                messageListener?.onMessageReceived(result)
+                barcodeBuffer.clear()
+            }
+            return
         }
 
-        return // 키 이벤트 소비
+        // 숫자 및 알파벳 직접 매핑 (언어 영향 없음)
+        val c = mapKeyCodeToChar(event)
+
+        c?.let { barcodeBuffer.append(it) }
+    }
+
+    private fun mapKeyCodeToChar(event: KeyEvent): Char? {
+        val keyCode = event.keyCode
+        val isShift = event.isShiftPressed
+
+        return when (keyCode) {
+            // 숫자 및 숫자 키의 특수문자 (!@#$%^&*() )
+            KeyEvent.KEYCODE_0 -> if (isShift) ')' else '0'
+            KeyEvent.KEYCODE_1 -> if (isShift) '!' else '1'
+            KeyEvent.KEYCODE_2 -> if (isShift) '@' else '2'
+            KeyEvent.KEYCODE_3 -> if (isShift) '#' else '3'
+            KeyEvent.KEYCODE_4 -> if (isShift) '$' else '4'
+            KeyEvent.KEYCODE_5 -> if (isShift) '%' else '5'
+            KeyEvent.KEYCODE_6 -> if (isShift) '^' else '6'
+            KeyEvent.KEYCODE_7 -> if (isShift) '&' else '7'
+            KeyEvent.KEYCODE_8 -> if (isShift) '*' else '8'
+            KeyEvent.KEYCODE_9 -> if (isShift) '(' else '9'
+
+            // 알파벳 (A-Z)
+            in KeyEvent.KEYCODE_A..KeyEvent.KEYCODE_Z -> {
+                val baseChar = (keyCode - KeyEvent.KEYCODE_A + 'A'.toInt()).toChar()
+                if (isShift) baseChar else baseChar.lowercaseChar()
+            }
+
+            // 문장 부호 및 특수 기호
+            KeyEvent.KEYCODE_MINUS -> if (isShift) '_' else '-'
+            KeyEvent.KEYCODE_EQUALS -> if (isShift) '+' else '='
+            KeyEvent.KEYCODE_LEFT_BRACKET -> if (isShift) '{' else '['
+            KeyEvent.KEYCODE_RIGHT_BRACKET -> if (isShift) '}' else ']'
+            KeyEvent.KEYCODE_BACKSLASH -> if (isShift) '|' else '\\'
+            KeyEvent.KEYCODE_SEMICOLON -> if (isShift) ':' else ';'
+            KeyEvent.KEYCODE_APOSTROPHE -> if (isShift) '"' else '\''
+            KeyEvent.KEYCODE_GRAVE -> if (isShift) '~' else '`'
+            KeyEvent.KEYCODE_COMMA -> if (isShift) '<' else ','
+            KeyEvent.KEYCODE_PERIOD -> if (isShift) '>' else '.'
+            KeyEvent.KEYCODE_SLASH -> if (isShift) '?' else '/'
+            KeyEvent.KEYCODE_SPACE -> ' '
+
+            else -> null // 매핑되지 않은 키는 무시
+        }
     }
 
     fun setOnMessageListener(listener: MessageListener) {
