@@ -17,11 +17,6 @@ object BarcodeScanManager {
     }
 
     fun eventKeyToBarcode(event: KeyEvent) {
-        // 허니웰 바코드 스캐너에서 Enter가 들어온 후에 "J" 데이터가 입력되어 다음 데이터를 읽어오는데 문제가 있음.
-        if (barcodeBuffer.toString() == "J") {
-            barcodeBuffer.clear()
-        }
-
         if (event.action != KeyEvent.ACTION_DOWN) return
 
         val keyCode = event.keyCode
@@ -45,6 +40,10 @@ object BarcodeScanManager {
     private fun mapKeyCodeToChar(event: KeyEvent): Char? {
         val keyCode = event.keyCode
         val isShift = event.isShiftPressed
+
+        if(keyCode == KeyEvent.KEYCODE_J && event.isCtrlPressed) {
+            return null
+        }
 
         return when (keyCode) {
             // 숫자 및 숫자 키의 특수문자 (!@#$%^&*() )
